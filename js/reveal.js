@@ -29,7 +29,17 @@ function fadeBlocks() {
 function lineHeadings() {
   const heads = document.querySelectorAll('[data-line-reveal]');
   heads.forEach(splitIntoLines);
-  watch(heads, (el) => el.classList.add('is-in'), 0.9);
+  watch(heads, revealHeading, 0.9);
+}
+
+// Add is-in for the animated path, but also pin the end state inline so a
+// stalled/unsupported transition can never leave the heading clipped.
+function revealHeading(el) {
+  if (el.classList.contains('is-in')) return;
+  el.classList.add('is-in');
+  const inners = el.querySelectorAll('.lr-inner');
+  inners.forEach((i) => { i.style.transform = 'none'; });
+  setTimeout(() => inners.forEach((i) => { i.style.transition = 'none'; i.style.transform = 'none'; }), 1100);
 }
 
 // Lay the words out, read where the browser wraps, then re-wrap each line
@@ -83,6 +93,9 @@ function staggerServices() {
     batch.forEach((el, k) => {
       el.style.transitionDelay = `${k * 90}ms`;
       el.classList.replace('svc-armed', 'svc-in');
+      el.style.transform = 'none';
+      el.style.opacity = '1';
+      setTimeout(() => { el.style.transition = 'none'; el.style.transform = 'none'; el.style.opacity = '1'; }, 1000);
     });
     if (items.every((el) => el.classList.contains('svc-in'))) removeEventListener('scroll', check);
   };

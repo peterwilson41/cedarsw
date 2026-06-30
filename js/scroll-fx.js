@@ -30,7 +30,7 @@ function parallaxImages() {
 // Big "moment" images scale up from their bottom corner as you scroll past.
 function scrubMomentImages() {
   if (reduced) return;
-  const imgs = [...document.querySelectorAll('.moment__img')];
+  const imgs = [...document.querySelectorAll('.moment__img, .origin__media')];
   if (!imgs.length) return;
 
   onScroll(() => {

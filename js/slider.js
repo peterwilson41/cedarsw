@@ -1,33 +1,49 @@
-// Testimonial carousel — prev/next + dots, one card per step.
+// Testimonial carousel — infinite loop, one step per arrow press.
 export function initSlider() {
   const track = document.getElementById('tslideTrack');
-  if (!track) return;
+  if (!track || track.children.length < 2) return;
 
-  const count = track.children.length;
   const prev = document.getElementById('tPrev');
   const next = document.getElementById('tNext');
-  const dotsWrap = document.getElementById('tDots');
-  let current = 0;
+  prev?.removeAttribute('disabled');
 
-  const dots = Array.from({ length: count }, (_, i) => {
-    const dot = document.createElement('button');
-    dot.type = 'button';
-    dot.className = 't-dot';
-    dot.setAttribute('aria-label', `Go to testimonial ${i + 1}`);
-    dot.addEventListener('click', () => go(i));
-    dotsWrap.appendChild(dot);
-    return dot;
-  });
+  const EASE = 'transform var(--dur-slow) var(--ease-out)';
+  let busy = false;
 
-  const render = () => {
-    track.style.transform = `translateX(calc(${-current} * (var(--tslide-w) + 24px)))`;
-    if (prev) prev.disabled = current === 0;
-    if (next) next.disabled = current === count - 1;
-    dots.forEach((d, i) => d.classList.toggle('is-active', i === current));
+  // distance from one card to the next, incl. gap
+  const step = () => {
+    const [a, b] = track.children;
+    return b.offsetLeft - a.offsetLeft;
   };
-  const go = (n) => { current = Math.max(0, Math.min(count - 1, n)); render(); };
 
-  prev?.addEventListener('click', () => go(current - 1));
-  next?.addEventListener('click', () => go(current + 1));
-  render();
+  const DUR = 600; // matches --dur-slow
+
+  const advance = () => {
+    if (busy) return;
+    busy = true;
+    track.style.transition = EASE;
+    track.style.transform = `translateX(${-step()}px)`;
+    setTimeout(() => {
+      track.style.transition = 'none';
+      track.appendChild(track.firstElementChild);
+      track.style.transform = 'none';
+      void track.offsetWidth; // flush
+      busy = false;
+    }, DUR);
+  };
+
+  const retreat = () => {
+    if (busy) return;
+    busy = true;
+    track.style.transition = 'none';
+    track.insertBefore(track.lastElementChild, track.firstElementChild);
+    track.style.transform = `translateX(${-step()}px)`;
+    void track.offsetWidth; // flush before animating back
+    track.style.transition = EASE;
+    track.style.transform = 'none';
+    setTimeout(() => { busy = false; }, DUR + 40);
+  };
+
+  next?.addEventListener('click', advance);
+  prev?.addEventListener('click', retreat);
 }
